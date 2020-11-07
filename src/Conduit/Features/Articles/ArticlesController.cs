@@ -51,12 +51,5 @@ namespace Conduit.Features.Articles
             command.Slug = slug;
             return await _mediator.Send(command);
         }
-
-        [HttpDelete("{slug}")]
-        [Authorize(AuthenticationSchemes = JwtIssuerOptions.Schemes)]
-        public async Task Delete(string slug)
-        {
-            await _mediator.Send(new Delete.Command(slug));
-        }
     }
 }
