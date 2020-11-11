@@ -20,6 +20,7 @@ resource "random_password" "password" {
   min_special = 1
 }
 resource "kubernetes_stateful_set" "mssql" {
+  count            = var.ext_database ? 1 : 0
   wait_for_rollout = "true"
   metadata {
     annotations = {
@@ -129,6 +130,7 @@ resource "kubernetes_stateful_set" "mssql" {
 }
 
 resource "kubernetes_service" "mssql" {
+  count            = var.ext_database ? 1 : 0
   metadata {
     name      = "mssql"
     namespace = kubernetes_namespace.main.metadata.0.name
@@ -151,7 +153,7 @@ resource "kubernetes_secret" "main" {
   }
 
   data = {
-    ASPNETCORE_Conduit_ConnectionString = "Server=tcp:mssql,1433;User ID=sa;Password=${random_password.password.result};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;Connection Timeout=30;"
+    ASPNETCORE_Conduit_ConnectionString = var.ext_database ? "Server=tcp:mssql,1433;User ID=sa;Password=${random_password.password.result};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=True;Connection Timeout=30;" : "Filename=realworld.db"
     SA_PASSWORD = random_password.password.result
   }
 }
@@ -195,7 +197,8 @@ resource "kubernetes_deployment" "backend" {
           }
           env {
             name  = "ASPNETCORE_Conduit_DatabaseProvider"
-            value = "sqlserver"
+            value = var.ext_database ? "sqlserver" : "sqlite"
+
           }
           
           resources {
