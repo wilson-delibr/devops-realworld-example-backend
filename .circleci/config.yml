@@ -30,7 +30,7 @@ jobs:
 
   fast_test:
     docker:
-      - image: devopsinfra/docker-terragrunt:tf-1.0.4-tg-0.31.3
+      - image: devopsinfra/docker-terragrunt:gcp-tf-1.0.4-tg-0.31.3
 
     steps:
       - attach_workspace:
