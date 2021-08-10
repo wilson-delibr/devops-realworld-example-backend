@@ -4,6 +4,10 @@ workflows:
     jobs:
       - build:
           context: devopsedu-global
+      - fast_test:
+          context: devopsedu-global
+          requires:
+            - build
 
 jobs:
   build:
@@ -19,3 +23,40 @@ jobs:
       - run: gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE}
       - run: docker build --rm=false -t eu.gcr.io/${GOOGLE_PROJECT_ID}/${CIRCLE_PROJECT_REPONAME}:$CIRCLE_SHA1 .
       - run: gcloud docker -- push eu.gcr.io/${GOOGLE_PROJECT_ID}/${CIRCLE_PROJECT_REPONAME}:$CIRCLE_SHA1
+      - persist_to_workspace:
+          root: .
+          paths:
+            - scripts
+
+  fast_test:
+    docker:
+      - image: eu.gcr.io/prepedu-mikael-tf-pr1/google-cloud-sdk-terraform:latest
+
+    steps:
+      - attach_workspace:
+          at: .
+
+      - run: echo ${GOOGLE_AUTH} | base64 -i --decode > ${HOME}/gcp-key.json
+      - run: gcloud auth activate-service-account --key-file ${HOME}/gcp-key.json
+      - run: gcloud --quiet config set project ${GOOGLE_PROJECT_ID}
+      - run: gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE}
+      - run:
+         name: Checking environment
+         command: env
+      - run:
+         name: Checking dirs
+         command: ls -l . scripts
+      - run:
+          name: Clone and update Terraform infrastructure repo
+          command: bash -x scripts/clone-and-update-infrastructure.sh ${CIRCLE_SHA1} devops-live-infrastructure/gce/europe-north1/dev/realworld-backend/fast
+      - run:
+          name: Deploy application and test pods
+          command: |
+            cd devops-live-infrastructure/gce/europe-north1/dev/realworld-backend/fast
+            export GOOGLE_CREDENTIALS=${HOME}/gcp-key.json
+            export GOOGLE_PROJECT=${GOOGLE_PROJECT_ID}
+            terragrunt apply -auto-approve
+            ext_ip=$(terragrunt output external_ip)
+            echo "Try to reach the endpoint"
+            curl -f http://${ext_ip}/articles
+
