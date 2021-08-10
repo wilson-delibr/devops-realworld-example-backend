@@ -4,6 +4,7 @@ workflows:
     jobs:
       - build:
           context: devopsedu-global
+
 jobs:
   build:
     machine: true
@@ -12,4 +13,9 @@ jobs:
       - run:
           name: Checking environment
           command: env
-      - run: docker build -t company/app:$CIRCLE_BRANCH .
+      - run: echo ${GOOGLE_AUTH} | base64 -i --decode > ${HOME}/gcp-key.json
+      - run: gcloud auth activate-service-account --key-file ${HOME}/gcp-key.json
+      - run: gcloud --quiet config set project ${GOOGLE_PROJECT_ID}
+      - run: gcloud --quiet config set compute/zone ${GOOGLE_COMPUTE_ZONE}
+      - run: docker build --rm=false -t eu.gcr.io/${GOOGLE_PROJECT_ID}/${CIRCLE_PROJECT_REPONAME}:$CIRCLE_SHA1 .
+      - run: gcloud docker -- push eu.gcr.io/${GOOGLE_PROJECT_ID}/${CIRCLE_PROJECT_REPONAME}:$CIRCLE_SHA1
