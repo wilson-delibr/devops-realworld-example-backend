@@ -30,7 +30,7 @@ jobs:
 
   fast_test:
     docker:
-      - image: eu.gcr.io/prepedu-mikael-tf-pr1/google-cloud-sdk-terraform:latest
+      - image: devopsinfra/docker-terragrunt:tf-1.0.4-tg-0.31.3
 
     steps:
       - attach_workspace:
