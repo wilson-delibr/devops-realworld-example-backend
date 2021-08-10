@@ -25,8 +25,8 @@ echo tag = \"${gitref}\" > tag.auto.tfvars
 sed -i s/?ref=.*\"/?ref=${gitref}\"/ terragrunt.hcl
 sed -i s/github.com\\/[^\\/]*\\//github.com\\/${githubaccount}\\// terragrunt.hcl
 if [ `git diff | wc -l` -gt 0 ]; then
-    git config user.email "mikael+circleci@sennerholm.net"
-    git config user.name "Circle CI"
+    git config user.email "alexander.wilson@delibr.com"
+    git config user.name "AS Wilson"
     git commit -m"Automated Updated ${path} to image version ${version} and gitref ${gitref}" -a
     git push || (cd -; rm -rf devops-live-infrastructure; $0 "$@")
 fi
